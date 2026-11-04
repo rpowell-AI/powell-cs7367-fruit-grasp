@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synthetic-Data Fruit Detection and Robotic Grasping | Roderick Powell</title>
+<meta name="description" content="YOLOv8m fruit detection trained on synthetic PyBullet scenes, driving a simulated Franka Panda arm to grasp and lift a target fruit. CS 7367 Machine Vision, Kennesaw State University.">
+<style>
+  :root {
+    --ink: #14181f;
+    --muted: #5b6573;
+    --line: #e2e6ec;
+    --bg: #ffffff;
+    --soft: #f5f7fa;
+    --accent: #c8102e;
+    --accent2: #1f5fbf;
+    --good: #1b7f4b;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.6;
+    font-size: 17px;
+  }
+  a { color: var(--accent2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+
+  nav {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(255,255,255,0.94);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+  }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  nav .brand { font-weight: 700; font-size: 15px; color: var(--ink); }
+  nav ul { list-style: none; display: flex; gap: 22px; margin: 0; padding: 0; font-size: 14px; }
+  nav ul a { color: var(--muted); }
+  @media (max-width: 720px) { nav ul { display: none; } }
+
+  header.hero { padding: 64px 0 40px; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    font-family: var(--mono); font-size: 13px; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  h1 { font-size: clamp(30px, 4.6vw, 46px); line-height: 1.15; margin: 10px 0 16px; letter-spacing: -0.015em; }
+  .lede { font-size: 19px; color: var(--muted); max-width: 760px; margin: 0 0 22px; }
+  .byline { font-size: 15px; color: var(--muted); margin-bottom: 26px; }
+  .byline strong { color: var(--ink); }
+  .btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn {
+    display: inline-block; padding: 10px 16px; border-radius: 8px;
+    font-size: 15px; font-weight: 600; border: 1px solid var(--line); color: var(--ink); background: var(--bg);
+  }
+  .btn:hover { text-decoration: none; border-color: var(--ink); }
+  .btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 36px 0 0; }
+  .stat { background: var(--soft); border-radius: 10px; padding: 16px 18px; }
+  .stat .n { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+  .stat .l { font-size: 13px; color: var(--muted); line-height: 1.35; }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  section { padding: 56px 0; border-bottom: 1px solid var(--line); }
+  h2 { font-size: 26px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  h3 { font-size: 18px; margin: 28px 0 8px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+
+  .video-box {
+    background: #0d1117; border-radius: 12px; overflow: hidden; aspect-ratio: 16 / 9;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .video-box video { width: 100%; height: 100%; display: block; }
+  .caption { font-size: 14px; color: var(--muted); margin-top: 10px; }
+
+  .flow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 8px; }
+  .step {
+    border: 1px solid var(--line); border-radius: 10px; padding: 14px 12px; position: relative; background: var(--bg);
+  }
+  .step .k { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .step .t { font-weight: 700; font-size: 15px; margin: 4px 0 6px; line-height: 1.25; }
+  .step .d { font-size: 13px; color: var(--muted); line-height: 1.4; }
+  .step.sim { border-top: 4px solid var(--accent2); }
+  .step.cnn { border-top: 4px solid var(--accent); }
+  .legend { display: flex; gap: 18px; font-size: 13px; color: var(--muted); margin-top: 14px; }
+  .legend span::before {
+    content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px;
+  }
+  .legend .s::before { background: var(--accent2); }
+  .legend .c::before { background: var(--accent); }
+  @media (max-width: 860px) { .flow { grid-template-columns: repeat(2, 1fr); } }
+
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 6px 0 4px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.hl td { background: #f1f8f4; }
+  .bar { height: 8px; background: var(--soft); border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .bar i { display: block; height: 100%; background: var(--good); }
+  .note { font-size: 14px; color: var(--muted); }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+  .card { background: var(--soft); border-radius: 12px; padding: 20px 22px; }
+  .card h3 { margin-top: 0; }
+  ul.clean { padding-left: 20px; margin: 8px 0 0; }
+  ul.clean li { margin: 6px 0; }
+
+  .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+  .link {
+    display: block; border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; color: var(--ink);
+  }
+  .link:hover { border-color: var(--ink); text-decoration: none; }
+  .link .t { font-weight: 700; }
+  .link .d { font-size: 14px; color: var(--muted); }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .tag { font-family: var(--mono); font-size: 12px; padding: 4px 9px; border-radius: 999px; background: var(--soft); color: var(--muted); }
+
+  footer { padding: 36px 0 56px; font-size: 14px; color: var(--muted); }
+  footer p { margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <span class="brand">Roderick Powell</span>
+    <ul>
+      <li><a href="#demo">Demo</a></li>
+      <li><a href="#pipeline">Pipeline</a></li>
+      <li><a href="#results">Results</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#resources">Resources</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">CS 7367 Machine Vision &middot; Kennesaw State University</div>
+    <h1>Synthetic-Data Fruit Detection for Simulated Robotic Grasping</h1>
+    <p class="lede">A YOLOv8m detector trained entirely on procedurally generated PyBullet scenes finds a target fruit among others and guides a simulated Franka Panda arm to grasp and lift it.</p>
+    <div class="byline"><strong>Roderick Powell</strong> &middot; M.S. in Artificial Intelligence, College of Computing and Software Engineering &middot; Advisor: Dr. Sanghoon Lee</div>
+    <div class="btns">
+      <a class="btn primary" href="#demo">Watch the demo</a>
+      <a class="btn" href="paper.pdf">Read the paper (PDF)</a>
+      <a class="btn" href="https://github.com/rpowell-AI/powell-cs7367-fruit-grasp">View code on GitHub</a>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="n">0.995</div><div class="l">mAP@50 on every fruit class (v14)</div></div>
+      <div class="stat"><div class="n">92%</div><div class="l">Banana grasp-and-lift success (46/50)</div></div>
+      <div class="stat"><div class="n">1 &rarr; 46</div><div class="l">Successful banana lifts per 50 trials, v13 to v14</div></div>
+      <div class="stat"><div class="n">0.2&ndash;0.4 cm</div><div class="l">Median 3D localization error from depth</div></div>
+    </div>
+  </div>
+</header>
+
+<section id="demo">
+  <div class="wrap">
+    <h2>Demo</h2>
+    <p class="sub">The detector finds the target fruit, the arm moves to the estimated position, closes the gripper and lifts.</p>
+    <div class="video-box">
+      <video controls preload="metadata" playsinline>
+        <source src="grasp_video.mp4" type="video/mp4">
+        Your browser does not support embedded video. <a href="grasp_video.mp4">Download the video</a>.
+      </video>
+    </div>
+    <p class="caption">Simulated banana grasp and lift with a Franka Panda arm in PyBullet. Fruit are built from geometric primitives.</p>
+  </div>
+</section>
+
+<section id="pipeline">
+  <div class="wrap">
+    <h2>Pipeline</h2>
+    <p class="sub">Two parts work together: PyBullet builds the world, renders the camera view and drives the robot, while YOLOv8m does all the visual perception.</p>
+
+    <div class="flow">
+      <div class="step sim"><div class="k">01</div><div class="t">Generate scenes</div><div class="d">Random orange, pear and banana layouts on a table</div></div>
+      <div class="step sim"><div class="k">02</div><div class="t">Auto-label</div><div class="d">Bounding boxes taken from segmentation masks, no hand labeling</div></div>
+      <div class="step cnn"><div class="k">03</div><div class="t">Train YOLOv8m</div><div class="d">COCO-pretrained, fine-tuned on 3 fruit classes</div></div>
+      <div class="step cnn"><div class="k">04</div><div class="t">Detect target</div><div class="d">Find the requested fruit in a new RGB view</div></div>
+      <div class="step sim"><div class="k">05</div><div class="t">Localize in 3D</div><div class="d">Box center plus depth buffer gives the grasp point</div></div>
+      <div class="step sim"><div class="k">06</div><div class="t">Grasp and lift</div><div class="d">Panda arm approaches, closes and lifts the fruit</div></div>
+    </div>
+    <div class="legend"><span class="s">PyBullet simulation</span><span class="c">YOLOv8m CNN</span></div>
+
+    <div class="tags">
+      <span class="tag">Python</span><span class="tag">PyBullet</span><span class="tag">Ultralytics YOLOv8m</span>
+      <span class="tag">PyTorch</span><span class="tag">Franka Panda</span><span class="tag">Google Colab GPU</span>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <h2>Results</h2>
+    <p class="sub">All numbers come from the final v14 run unless noted.</p>
+
+    <h3>Detection accuracy (validation set)</h3>
+    <table>
+      <thead><tr><th>Class</th><th class="num">mAP@50</th><th class="num">mAP@50&ndash;95</th></tr></thead>
+      <tbody>
+        <tr><td>Orange</td><td class="num">0.995</td><td class="num">0.995</td></tr>
+        <tr><td>Pear</td><td class="num">0.995</td><td class="num">0.995</td></tr>
+        <tr><td>Banana</td><td class="num">0.995</td><td class="num">0.978</td></tr>
+      </tbody>
+    </table>
+    <p class="note">mAP@50 is saturated for every class, so mAP@50&ndash;95 is the more telling number. It shows banana boxes are slightly less tight, which matters for depth-based grasp-point estimates.</p>
+
+    <h3>End-to-end grasp-and-lift success (50 trials per target)</h3>
+    <table>
+      <thead><tr><th>Target fruit</th><th class="num">Ground-truth position</th><th class="num">Depth-estimated position</th><th style="width:30%"></th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Banana</td><td class="num">92%</td><td class="num">46/50</td><td><div class="bar"><i style="width:92%"></i></div></td></tr>
+        <tr><td>Orange</td><td class="num">82%</td><td class="num">41/50</td><td><div class="bar"><i style="width:82%"></i></div></td></tr>
+        <tr><td>Pear</td><td class="num">54%</td><td class="num">25/50</td><td><div class="bar"><i style="width:54%"></i></div></td></tr>
+      </tbody>
+    </table>
+    <p class="note">The depth-estimated runs aim the arm only from the camera's view instead of reading the fruit's true position from the simulator. They matched the ground-truth runs, with median localization errors of 0.2&ndash;0.4 cm.</p>
+  </div>
+</section>
+
+<section id="findings">
+  <div class="wrap">
+    <h2>Key findings</h2>
+    <div class="two">
+      <div class="card">
+        <h3>What made the difference</h3>
+        <ul class="clean">
+          <li><strong>Class imbalance.</strong> Early training data had 46 orange boxes against 559 banana boxes. Diagnosing and fixing this was the first step to reliable detection.</li>
+          <li><strong>Seeing the scene.</strong> A detection-only diagnostic showed the detector was correct whenever the target was actually visible. Failures came from the scene, not the CNN.</li>
+          <li><strong>Camera and robot setup.</strong> Re-aiming the camera and moving the robot base out of the table took banana success from 1 in 50 (v13) to 46 in 50 (v14).</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Limitations and future work</h3>
+        <ul class="clean">
+          <li>Fruit are simple geometric primitives. Next step: realistic fruit meshes and photo textures.</li>
+          <li>Pear grasping is the weakest at 54%. Shape-aware grasp planning could help.</li>
+          <li>Everything runs in simulation. Testing sim-to-real transfer with real fruit images and a physical arm is the long-term goal.</li>
+          <li>This work is planned as the base for my M.S. in AI capstone.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="resources">
+  <div class="wrap">
+    <h2>Resources</h2>
+    <p class="sub">Paper, slides, poster and full source code.</p>
+    <div class="links">
+      <a class="link" href="paper.pdf"><div class="t">Paper (PDF)</div><div class="d">IEEE-format project report</div></a>
+      <a class="link" href="slides.pdf"><div class="t">Slides (PDF)</div><div class="d">CS 7367 class presentation</div></a>
+      <a class="link" href="poster.pdf"><div class="t">Poster (PDF)</div><div class="d">KSU CCSE Computing Showcase (C-Day)</div></a>
+      <a class="link" href="https://github.com/rpowell-AI/powell-cs7367-fruit-grasp"><div class="t">Source code</div><div class="d">Colab notebook and training pipeline</div></a>
+      <a class="link" href="grasp_video.mp4"><div class="t">Demo video</div><div class="d">Simulated banana grasp and lift</div></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><strong>Roderick Powell</strong> &middot; M.S. in Artificial Intelligence, Kennesaw State University</p>
+    <p>Course project for CS 7367 Machine Vision. Thanks to Dr. Sanghoon Lee for guidance.</p>
+    <p><a href="https://github.com/rpowell-AI">github.com/rpowell-AI</a> &middot; <a href="mailto:rpowel64@students.kennesaw.edu">rpowel64@students.kennesaw.edu</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
