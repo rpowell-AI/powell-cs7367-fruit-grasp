@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Synthetic-Data Fruit Detection and Robotic Grasping | Roderick Powell</title>
-<meta name="description" content="YOLOv8m fruit detection trained on synthetic PyBullet scenes, driving a simulated Franka Panda arm to grasp and lift a target fruit. CS 7367 Machine Vision, Kennesaw State University.">
+<meta name="description" content="YOLOv8m fruit detection fine-tuned on synthetic PyBullet scenes, driving a simulated Franka Panda arm to grasp and lift a target fruit. CS 7367 Machine Vision, Kennesaw State University.">
 <style>
   :root {
     --ink: #14181f;
@@ -145,7 +145,7 @@
   <div class="wrap">
     <div class="eyebrow">CS 7367 Machine Vision &middot; Kennesaw State University</div>
     <h1>Synthetic-Data Fruit Detection for Simulated Robotic Grasping</h1>
-    <p class="lede">A YOLOv8m detector trained entirely on procedurally generated PyBullet scenes finds a target fruit among others and guides a simulated Franka Panda arm to grasp and lift it.</p>
+    <p class="lede">A YOLOv8m detector fine-tuned only on procedurally generated PyBullet scenes (from COCO-pretrained weights) finds a target fruit among others and guides a simulated Franka Panda arm to grasp and lift it.</p>
     <div class="byline"><strong>Roderick Powell</strong> &middot; M.S. in Artificial Intelligence, College of Computing and Software Engineering &middot; Advisor: Dr. Sanghoon Lee</div>
     <div class="btns">
       <a class="btn primary" href="#demo">Watch the demo</a>
@@ -155,7 +155,7 @@
 
     <div class="stats">
       <div class="stat"><div class="n">0.995</div><div class="l">mAP@50 on every fruit class (v14)</div></div>
-      <div class="stat"><div class="n">92%</div><div class="l">Banana grasp-and-lift success (46/50)</div></div>
+      <div class="stat"><div class="n">92 / 82 / 50%</div><div class="l">Grasp-and-lift success, banana / orange / pear (depth-estimated)</div></div>
       <div class="stat"><div class="n">1 &rarr; 46</div><div class="l">Successful banana lifts per 50 trials, v13 to v14</div></div>
       <div class="stat"><div class="n">0.2&ndash;0.4 cm</div><div class="l">Median 3D localization error from depth</div></div>
     </div>
@@ -186,7 +186,7 @@
       <div class="step sim"><div class="k">02</div><div class="t">Auto-label</div><div class="d">Bounding boxes taken from segmentation masks, no hand labeling</div></div>
       <div class="step cnn"><div class="k">03</div><div class="t">Train YOLOv8m</div><div class="d">COCO-pretrained, fine-tuned on 3 fruit classes</div></div>
       <div class="step cnn"><div class="k">04</div><div class="t">Detect target</div><div class="d">Find the requested fruit in a new RGB view</div></div>
-      <div class="step sim"><div class="k">05</div><div class="t">Localize in 3D</div><div class="d">Box center plus depth buffer gives the grasp point</div></div>
+      <div class="step sim"><div class="k">05</div><div class="t">Localize in 3D</div><div class="d">Depth in the box gives the grasp point</div></div>
       <div class="step sim"><div class="k">06</div><div class="t">Grasp and lift</div><div class="d">Panda arm approaches, closes and lifts the fruit</div></div>
     </div>
     <div class="legend"><span class="s">PyBullet simulation</span><span class="c">YOLOv8m CNN</span></div>
@@ -208,7 +208,7 @@
       <thead><tr><th>Class</th><th class="num">mAP@50</th><th class="num">mAP@50&ndash;95</th></tr></thead>
       <tbody>
         <tr><td>Orange</td><td class="num">0.995</td><td class="num">0.995</td></tr>
-        <tr><td>Pear</td><td class="num">0.995</td><td class="num">0.995</td></tr>
+        <tr><td>Pear</td><td class="num">0.995</td><td class="num">0.994</td></tr>
         <tr><td>Banana</td><td class="num">0.995</td><td class="num">0.978</td></tr>
       </tbody>
     </table>
@@ -218,12 +218,12 @@
     <table>
       <thead><tr><th>Target fruit</th><th class="num">Ground-truth position</th><th class="num">Depth-estimated position</th><th style="width:30%"></th></tr></thead>
       <tbody>
-        <tr class="hl"><td>Banana</td><td class="num">92%</td><td class="num">46/50</td><td><div class="bar"><i style="width:92%"></i></div></td></tr>
-        <tr><td>Orange</td><td class="num">82%</td><td class="num">41/50</td><td><div class="bar"><i style="width:82%"></i></div></td></tr>
-        <tr><td>Pear</td><td class="num">54%</td><td class="num">25/50</td><td><div class="bar"><i style="width:54%"></i></div></td></tr>
+        <tr class="hl"><td>Banana</td><td class="num">92%</td><td class="num">92%</td><td><div class="bar"><i style="width:92%"></i></div></td></tr>
+        <tr><td>Orange</td><td class="num">82%</td><td class="num">82%</td><td><div class="bar"><i style="width:82%"></i></div></td></tr>
+        <tr><td>Pear</td><td class="num">54%</td><td class="num">50%</td><td><div class="bar"><i style="width:50%"></i></div></td></tr>
       </tbody>
     </table>
-    <p class="note">The depth-estimated runs aim the arm only from the camera's view instead of reading the fruit's true position from the simulator. They matched the ground-truth runs, with median localization errors of 0.2&ndash;0.4 cm.</p>
+    <p class="note">The depth-estimated runs aim the arm only from the camera's view instead of reading the fruit's true position from the simulator. Success from depth was 92% / 82% / 50% (46/50 banana, 41/50 orange, 25/50 pear), vs 92% / 82% / 54% from ground-truth positions. Both modes ran the same 150 pick-up trials (50 per fruit), with median localization errors of 0.2&ndash;0.4 cm.</p>
   </div>
 </section>
 
@@ -243,7 +243,7 @@
         <h3>Limitations and future work</h3>
         <ul class="clean">
           <li>Fruit are simple geometric primitives. Next step: realistic fruit meshes and photo textures.</li>
-          <li>Pear grasping is the weakest at 54%. Shape-aware grasp planning could help.</li>
+          <li>Pear grasping is the weakest at 50% (depth-estimated). Shape-aware grasp planning could help.</li>
           <li>Everything runs in simulation. Testing sim-to-real transfer with real fruit images and a physical arm is the long-term goal.</li>
           <li>This work is planned as the base for my M.S. in AI capstone.</li>
         </ul>
