@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Outline of Next Steps: Incorporating Agentic Robotics | Roderick Powell</title>
+<meta name="description" content="Planned next iteration of the synthetic-data YOLOv8 fruit-grasping project: an agentic loop that revises the grasp policy from trial failures. Future work, not part of the submitted C-Day entry.">
+<style>
+  :root {
+    --ink: #14181f;
+    --muted: #5b6573;
+    --line: #e2e6ec;
+    --bg: #ffffff;
+    --soft: #f5f7fa;
+    --accent: #c8102e;
+    --accent2: #1f5fbf;
+    --good: #1b7f4b;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.55;
+    font-size: 16px;
+  }
+  a { color: var(--accent2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+
+  nav {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(255,255,255,0.94);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+  }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  nav .brand { font-weight: 700; font-size: 15px; color: var(--ink); }
+  nav ul { list-style: none; display: flex; gap: 22px; margin: 0; padding: 0; font-size: 14px; }
+  nav ul a { color: var(--muted); }
+  @media (max-width: 720px) { nav ul { display: none; } }
+
+  header.hero { padding: 48px 0 28px; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    font-family: var(--mono); font-size: 13px; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.15; margin: 10px 0 14px; letter-spacing: -0.015em; }
+  .lede { font-size: 18px; color: var(--muted); max-width: 760px; margin: 0 0 18px; }
+  .status {
+    display: inline-block; background: var(--soft); border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px 14px; font-size: 14px; color: var(--muted); line-height: 1.5;
+  }
+  .status strong { color: var(--ink); }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 28px 0 0; }
+  .stat { background: var(--soft); border-radius: 10px; padding: 14px 16px; }
+  .stat .n { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+  .stat .l { font-size: 13px; color: var(--muted); line-height: 1.35; }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  section { padding: 36px 0; border-bottom: 1px solid var(--line); }
+  section:last-of-type { border-bottom: none; }
+  h2 { font-size: 23px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  h3 { font-size: 17px; margin: 22px 0 6px; }
+  .sub { color: var(--muted); margin: 0 0 18px; }
+  p { margin: 0 0 12px; }
+  ul { margin: 0 0 12px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  code { font-family: var(--mono); font-size: 0.88em; background: var(--soft); padding: 1px 5px; border-radius: 4px; }
+
+  .flow {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 4px;
+    font-size: 14px; font-weight: 600;
+  }
+  .flow .node { background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
+  .flow .arrow { color: var(--muted); font-weight: 400; }
+  .flow .node.agent { background: #fdf0f1; border-color: #f0c4c9; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 6px 0 4px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+  td .tag { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+
+  .note { font-size: 14px; color: var(--muted); }
+  footer { padding: 28px 0 48px; }
+  footer .wrap { font-size: 14px; color: var(--muted); }
+  @media print {
+    nav { position: static; }
+    section { padding: 24px 0; }
+    body { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="index.html">Synthetic-Data Fruit Grasping</a>
+    <ul>
+      <li><a href="index.html">Project</a></li>
+      <li><a href="paper.pdf">Paper</a></li>
+      <li><a href="poster.pdf">Poster</a></li>
+      <li><a href="slides.pdf">Slides</a></li>
+      <li><a href="https://github.com/rpowell-ai/powell-cs7367-fruit-grasp">Code</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Next Steps &middot; Future Work</div>
+  <h1>Outline of Next Steps: Incorporating Agentic Robotics</h1>
+  <p class="lede">Detection is solved. The next iteration hands the grasp strategy to a coding agent that revises the grasp policy from trial failures, so the robot learns to pick better instead of following one fixed heuristic.</p>
+  <div class="status"><strong>Status:</strong> planned work, post-C-Day. Nothing here changes the submitted C-Day entry (Poster-1239, category GRM) or the numbers below, which are the baseline this work is measured against.</div>
+
+  <div class="stats">
+    <div class="stat"><div class="n">0.995</div><div class="l">mAP@50, YOLOv8m on synthetic scenes only (frozen)</div></div>
+    <div class="stat"><div class="n">92%</div><div class="l">Banana grasp-and-lift, 46/50 trials</div></div>
+    <div class="stat"><div class="n">82%</div><div class="l">Orange grasp-and-lift, 41/50 trials</div></div>
+    <div class="stat"><div class="n">50%</div><div class="l">Pear grasp-and-lift, 25/50 trials</div></div>
+  </div>
+</header>
+
+<section>
+  <h2>1. What is already solved &mdash; and stays frozen</h2>
+  <p>Perception is done: YOLOv8m fine-tuned on synthetic scenes only finds and classifies all 149 visible targets across 150 diagnostic trials. The agent never retrains or edits the detector. The simulator is the asset &mdash; a single-cell Colab notebook (v14) running PyBullet with a Franka Panda arm and a fixed eye-to-hand depth camera. The comparison is already clean: the same 150 trials, same seeds (orange 1001, pear 1002, banana 1003), same depth-estimated aiming. Any new policy runs the identical setup, so its numbers sit directly next to the 92/82/50 baseline.</p>
+  <p>All 36 pear misses happen at the grasp. The pear is top-heavy and tips when the gripper closes, so pear is where the agent starts. The lift today is assisted &mdash; a fixed joint locks the fruit to the gripper once both fingers touch &mdash; so the current rates measure reaching and closing, not holding through a real lift. The agent owns exactly two things, in this order: the grasp strategy, then the unassisted lift.</p>
+</section>
+
+<section>
+  <h2>2. The loop</h2>
+  <p>Adapted from the Berkeley controlled study of agentic robotics (<a href="https://arxiv.org/abs/2611.09030">arXiv:2611.09030</a>). The agent works from skill-level feedback and object-frame geometry, not raw coordinates, and every trial is logged per stage so failures are attributed to the stage that caused them.</p>
+  <div class="flow">
+    <span class="node">Detect (frozen YOLOv8m)</span><span class="arrow">&rarr;</span>
+    <span class="node">Estimate pose (depth)</span><span class="arrow">&rarr;</span>
+    <span class="node agent">Agent-written grasp policy</span><span class="arrow">&rarr;</span>
+    <span class="node">Run trials in PyBullet</span><span class="arrow">&rarr;</span>
+    <span class="node">Per-stage failure log</span><span class="arrow">&rarr;</span>
+    <span class="node agent">Agent revises policy</span>
+  </div>
+  <p class="note">A pear that tips at finger-close is a <em>grasp</em> failure, not a <em>lift</em> failure. The agent must not be allowed to &ldquo;fix&rdquo; it by changing the lift.</p>
+
+  <h3>What the agent is allowed to edit</h3>
+  <ul>
+    <li><strong>Policy representation:</strong> the grasp policy is a Python function (or small set of functions) that receives object-frame geometry and stage feedback and returns grasp parameters, plus optional intermediate waypoints or a short approach strategy.</li>
+    <li><strong>Minimal skill prior:</strong> the current fixed top-down grasp as a baseline skill, plus a small library of primitives &mdash; approach, descend, close, lift, and a &ldquo;try lower / stem-side / slower close&rdquo; template. The agent may reuse, parameterize, or rewrite these.</li>
+    <li><strong>Coding model:</strong> the first runs use the coding agent already used for Colab/Python work. The specific model (or model class) is named and documented when the work starts. The Berkeley paper showed policy-repair ability diverges sharply across models even when zero-shot performance is similar, so documenting the choice makes results comparable.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>3. Experiments, in order</h2>
+  <table>
+    <tr><th></th><th>Experiment</th><th>What changes</th><th>Success criterion</th></tr>
+    <tr><td><span class="tag">E1</span></td><td>Agent-optimised grasp, assisted lift kept</td><td>Grasp parameters only (point, yaw, approach height, close speed, per-fruit policies). Same 150 trials and seeds.</td><td>Pear above 50% with banana and orange not regressing; all three reported with Wilson 95% CIs</td></tr>
+    <tr><td><span class="tag">E2</span></td><td>Unassisted lift</td><td>Remove the fixed-joint constraint; success means the fruit is held through the full 0.20&nbsp;m lift. Runs on the E1-winning policy.</td><td>Honest end-to-end rate per fruit; a drop from E1 is itself the finding</td></tr>
+    <tr><td><span class="tag">E3</span></td><td>Per-fruit policies</td><td>Pear gets its own policy (lower grasp, stem-side approach, slower close, tilt-aware lift); banana and orange keep theirs.</td><td>Pear gain without cross-fruit regression</td></tr>
+    <tr><td><span class="tag">E4</span></td><td>Ablation: feedback granularity</td><td>Same agent and budget, but feedback per motion step instead of per skill stage.</td><td>Tests whether skill-level feedback holds at this scale; a negative result is still publishable</td></tr>
+  </table>
+  <p class="note">Stop rule: cap each experiment at a fixed iteration budget (20 revise-and-run rounds for E1). If the pear rate plateaus for 5 consecutive rounds while the agent keeps finding new variations, stop and report the plateau &mdash; that means the bottleneck is contact physics, not strategy, and that is itself the answer.</p>
+</section>
+
+<section>
+  <h2>4. Build order: harness first</h2>
+  <p>Before any agent runs, a harness wraps <code>attempt_grasp_and_lift()</code> so a grasp policy is a replaceable function, and a per-stage logger records every trial (detect / approach / grasp / lift, with the fruit, its pose, and the parameters used). The harness must reproduce the baseline exactly on the same seeds before E1 starts:</p>
+  <p><strong>Acceptance gate: 92% banana (46/50), 82% orange (41/50), 50% pear (25/50), exactly.</strong> Any deviation means the wrapper changed the policy, and E1 does not start until it is explained and fixed. The failure-attribution log from this loop is also the artifact that maps onto agent-evaluation research: it records not just whether the agent succeeded, but where and why it failed.</p>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Prepared November 2026, from the <a href="https://github.com/rpowell-ai/powell-cs7367-fruit-grasp">project repository</a>. Grounded in &ldquo;A Controlled Study of Models, Skills, Feedback, and Curriculum in Agentic Robotics&rdquo; (Chen et al., UC Berkeley, arXiv:2611.09030) and &ldquo;What Stops Recursive Self-Improvement in Robotics?&rdquo; (Sep 2026). &larr; <a href="index.html">Back to the project</a></p>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>
